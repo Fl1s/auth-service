@@ -1,0 +1,34 @@
+server:
+  port: 8081
+
+springdoc:
+  swagger-ui:
+    path: /swagger-ui.html
+
+spring:
+  docker:
+    compose:
+      file: ./auth-service/docker-compose.yaml
+  application:
+    name: auth-service
+
+  kafka:
+    bootstrap-servers: localhost:9092
+
+keycloak:
+  realm: <your-realm>
+  auth-server-url: <your-auth-server-url>
+  resource: <your-resource>
+  credentials:
+    client-id: <your-client-id>
+    secret: <your-secret>
+  use-resource-role-mappings: true
+
+eureka:
+  instance:
+    hostname: localhost
+  client:
+    registerWithEureka: true
+    fetchRegistry: true
+    serviceUrl:
+      defaultZone: http://${eureka.instance.hostname}:8095/eureka/
