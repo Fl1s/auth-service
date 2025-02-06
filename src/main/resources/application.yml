@@ -16,6 +16,7 @@ spring:
     bootstrap-servers: localhost:9092
 
 keycloak:
+  jwks-certs-url: <your-jwks-certs-url>
   realm: <your-realm>
   auth-server-url: <your-auth-server-url>
   resource: <your-resource>

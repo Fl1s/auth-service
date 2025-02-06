@@ -2,7 +2,7 @@ package org.app.user.controller;
 
 import lombok.RequiredArgsConstructor;
 import org.app.user.event.UserLoginEvent;
-import org.app.user.event.UserRegisteredEvent;
+import org.app.user.event.UserRegistrationEvent;
 import org.app.user.listener.AuthEventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,14 +14,14 @@ import org.springframework.web.bind.annotation.*;
 public class AuthController {
 
     private final AuthEventListener userEventListener;
-    @PostMapping("/register")
+    @PostMapping("/sign-up")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<?> register(@RequestBody UserRegisteredEvent event) {
+    public ResponseEntity<?> signUp(@RequestBody UserRegistrationEvent event) {
         return ResponseEntity.ok(userEventListener.handleUserRegistration(event));
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody UserLoginEvent event) {
+    @PostMapping("/sign-in")
+    public ResponseEntity<?> signIn(@RequestBody UserLoginEvent event) {
         return userEventListener.handleUserLogin(event);
     }
 }
