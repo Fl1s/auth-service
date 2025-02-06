@@ -21,10 +21,10 @@ cd auth-service
 3| Configure Keycloak:
 * Start Keycloak (if not already running):
 ```
-docker run -p 8080:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin quay.io/keycloak/keycloak:latest
+docker run -p 9090:8080 -e KEYCLOAK_USER=admin -e KEYCLOAK_PASSWORD=admin quay.io/keycloak/keycloak:latest
 ```
 * Set up Realm and Client:
-* * Access the Keycloak admin console at http://localhost:8080/auth.
+* * Access the Keycloak admin console at http://localhost:9090.
 * * Create a new realm for your application.
 * * Within the realm, add a new client with the appropriate Redirect URI.
 * Update application.yml:
