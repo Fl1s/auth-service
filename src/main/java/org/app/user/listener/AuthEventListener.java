@@ -2,7 +2,7 @@ package org.app.user.listener;
 
 import lombok.RequiredArgsConstructor;
 import org.app.user.event.UserLoginEvent;
-import org.app.user.event.UserRegisteredEvent;
+import org.app.user.event.UserRegistrationEvent;
 import org.app.user.service.AuthService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.springframework.http.ResponseEntity;
@@ -15,11 +15,11 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class AuthEventListener {
 
-    private final KafkaTemplate<String, UserRegisteredEvent> userRegisteredTemplate;
+    private final KafkaTemplate<String, UserRegistrationEvent> userRegisteredTemplate;
     private final AuthService authService;
 
     @KafkaListener(topics = "user-registration", groupId = "auth-service")
-    public boolean handleUserRegistration(UserRegisteredEvent event) {
+    public boolean handleUserRegistration(UserRegistrationEvent event) {
         try {
             authService.registerUser(event.getUsername(), event.getEmail(), event.getPassword());
             userRegisteredTemplate.send("user-registered", event);
