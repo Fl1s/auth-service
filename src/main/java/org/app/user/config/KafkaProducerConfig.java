@@ -2,6 +2,7 @@ package org.app.user.config;
 
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
+import org.app.user.event.UserRemoveEvent;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
@@ -10,7 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.beans.factory.annotation.Value;
 import org.app.user.event.UserRegistrationEvent;
-import org.app.user.event.CheckUserExistenceEvent;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +30,7 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    public ProducerFactory<String, UserRegistrationEvent> userRegistrationEventProducerFactory() {
+    public ProducerFactory<String, UserRegistrationEvent> userRegisterationEventProducerFactory() {
         return new DefaultKafkaProducerFactory<>(producerConfig());
     }
 
@@ -41,13 +41,14 @@ public class KafkaProducerConfig {
     }
 
     @Bean
-    public ProducerFactory<String, CheckUserExistenceEvent> checkUserExistenceEventProducerFactory() {
+    public ProducerFactory<String, UserRemoveEvent> userRemoveEventProducerFactory() {
         return new DefaultKafkaProducerFactory<>(producerConfig());
     }
 
     @Bean
-    public KafkaTemplate<String, CheckUserExistenceEvent> checkUserExistenceEventKafkaTemplate(
-            ProducerFactory<String, CheckUserExistenceEvent> producerFactory) {
+    public KafkaTemplate<String, UserRemoveEvent> userRemoveEventKafkaTemplate(
+            ProducerFactory<String, UserRemoveEvent> producerFactory) {
         return new KafkaTemplate<>(producerFactory);
     }
 }
+
