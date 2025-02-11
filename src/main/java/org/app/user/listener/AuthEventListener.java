@@ -1,8 +1,7 @@
 package org.app.user.listener;
 
 import lombok.RequiredArgsConstructor;
-import org.app.user.event.UserLoginEvent;
-import org.app.user.event.UserRegistrationEvent;
+import org.app.user.event.*;
 import org.app.user.service.AuthService;
 import org.keycloak.representations.AccessTokenResponse;
 import org.springframework.http.ResponseEntity;
@@ -10,32 +9,78 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 
+import java.util.logging.Logger;
 
 @Service
 @RequiredArgsConstructor
 public class AuthEventListener {
 
-    private final KafkaTemplate<String, UserRegistrationEvent> userRegisteredTemplate;
+    private final KafkaTemplate<String, UserRegistrationEvent> userRegistrationTemplate;
+    private final KafkaTemplate<String, UserRemoveEvent> userRemoveTemplate;
     private final AuthService authService;
+    private static final Logger logger = Logger.getLogger(AuthEventListener.class.getName());
 
-    @KafkaListener(topics = "user-registration", groupId = "auth-service")
-    public boolean handleUserRegistration(UserRegistrationEvent event) {
+    public void handleUserRegistration(UserRegistrationEvent event) {
         try {
-            authService.registerUser(event.getUsername(), event.getEmail(), event.getPassword());
-            userRegisteredTemplate.send("user-registered", event);
-            return ResponseEntity.ok("[User successfully registered!]").hasBody();
+            String keycloakUserId = authService.registerUser(event.getUsername(), event.getEmail(), event.getPassword());
+
+            UserRegistrationEvent registrationEvent = new UserRegistrationEvent(
+                    event.getCorrelationId(),
+                    keycloakUserId,
+                    event.getEmail(),
+                    event.getUsername(),
+                    event.getPassword(),
+                    event.getBio()
+            );
+
+            userRegistrationTemplate.send("user-registration", registrationEvent);
+
+            logger.info("[User successfully registered! Keycloak ID: " + keycloakUserId + "]");
         } catch (Exception e) {
-            return ResponseEntity.internalServerError().body("[User registration failed...]").hasBody();
+            logger.severe("[User registration failed. Error: " + e.getMessage() + "]");
         }
     }
 
-    @KafkaListener(topics = "user-login", groupId = "auth-service")
-    public ResponseEntity<?> handleUserLogin(UserLoginEvent event) {
+    @KafkaListener(topics = "user-registered", groupId = "auth-service",
+            containerFactory = "kafkaListenerContainerFactoryUserRegistered")
+    public void finalizeRegistration(UserRegisteredEvent event) {
+        if (event.isUserExists()) {
+            logger.info("[User successfully registered with ID: " + event.getUserId() + "]");
+        }
+    }
+
+    public void handleUserLogin(UserLoginEvent event) {
         try {
             AccessTokenResponse tokenResponse = authService.authenticateUser(event.getUsername(), event.getPassword());
-            return ResponseEntity.ok(tokenResponse);
+            logger.info("[User login successful! Access token generated.]");
+            ResponseEntity.ok(tokenResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(401).build();
+            logger.severe("[User login failed. Error: " + e.getMessage() + "]");
+            ResponseEntity.status(401).build();
+        }
+    }
+
+    public void handleUserRemove(UserRemoveEvent event) {
+        try {
+            userRemoveTemplate.send("user-remove", event);
+            logger.info("[User logged out successfully!]");
+        } catch (Exception e) {
+            logger.severe("[Logout failed. Error: " + e.getMessage() + "]");
+        }
+    }
+
+    @KafkaListener(topics = "user-removed", groupId = "auth-service",
+            containerFactory = "kafkaListenerContainerFactoryUserRemoved")
+    public ResponseEntity<?> finalizeRemove(UserRemovedEvent event) {
+        try {
+            if (!event.isUserExists()) {
+                authService.removeUser(event.getUserId());
+                logger.info("[User with ID: " + event.getUserId() + " successfully removed.]");
+            }
+            return ResponseEntity.ok("[User logged out successfully!]");
+        } catch (Exception e) {
+            logger.severe("[Logout failed. Error: " + e.getMessage() + "]");
+            return ResponseEntity.status(500).body("[Logout failed: " + e.getMessage() + "]");
         }
     }
 }
